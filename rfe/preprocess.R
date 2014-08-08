@@ -21,7 +21,7 @@ get.probe.exprs <- function(celfile.path){
                   summary.method="medianpolish")
   
   probe.exprs = as.data.frame(t(exprs(eset)))
-  probe.exprs$PTID = row.names(probe.exprs)
+  probe.exprs$PTID = gsub(".CEL", "", row.names(probe.exprs), perl=T)
   
   return(probe.exprs)
 }
@@ -36,13 +36,12 @@ get.gene.exprs <- function(probe.exprs, fun.aggregate=mean){
   
   tmp = probe.exprs %>%
     as.data.table %>% # converting to data.table makes this go much faster
-    melt(id.vars="id", variable.name="probe_id") # see reshape2 manual for details of melting/casting
+    melt(id.vars="PTID", variable.name="probe_id") # see reshape2 manual for details of melting/casting
     
   tmp2 = merge(tmp, probe2gene, by="probe_id") %>% # merge with mapping to genes
     select(-probe_id) %>% # delete column with probe_set id
-    dcast(id ~ symbol, fun.aggregate=fun.aggregate) %>% # aggregate across probe sets
-    as.data.frame %>%
-    mutate(id=gsub(".CEL$", "", as.character(id), perl=T))
+    dcast(PTID~symbol, fun.aggregate=fun.aggregate) %>% # aggregate across probe sets
+    as.data.frame
 }
 
 get.pheno <- function(){
@@ -64,7 +63,7 @@ get.pheno <- function(){
     merge(testing, all=T) %>%
     merge(validation, all=T) %>%
     mutate(status=ifelse(group=="Donor", "Ctrl", "AMI")) %>%
-    mutate(id=gsub("PLUS2", "PLUS_2", id))
+    mutate(PTID=gsub("PLUS2", "PLUS_2", id))
     
 }
 
