@@ -70,6 +70,16 @@ cec.count.v.snf.poor<-as.environment(".GlobalEnv")$eset.rma.cofact.v@phenoData@d
 prepca.eset.rma <- prep(eset.rma, scale = "none", center = TRUE)
 resPCA.eset.rma <- pca(prepca.eset.rma, method = "svd", center = FALSE, nPcs = 5)
 
+### ADDITIONS BY KRAMER TO GET TO ROOT OF PCA PROBLEM ###
+p = prcomp(t(expr.full), center=T, scale.=F)
+apply(p$x[,1:5], 2, function(z) wilcox.test(z ~ groupcall[,1]))
+
+p.t = prcomp(t(expr.full.t), center=T, scale.=F)
+apply(p.t$x[,1:5], 2, function(z) wilcox.test(z ~ groupcall.t[,1]))
+
+p.v = prcomp(t(expr.full.v), center=T, scale.=F)
+apply(p.v$x[,1:5], 2, function(z) wilcox.test(z ~ groupcall.v[,1]))
+
 
 
 ##STAT##
