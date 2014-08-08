@@ -16,9 +16,9 @@ get.probe.exprs <- function(celfile.path){
   
   eset = expresso(probes,
                   bgcorrect.method="rma",
-                  normalize.method="quantiles",
+                  normalize.method="constant",
                   pmcorrect.method="pmonly",
-                  summary.method="medianpolish")
+                  summary.method="avgdiff")
   
   probe.exprs = as.data.frame(t(exprs(eset)))
   probe.exprs$PTID = gsub(".CEL", "", row.names(probe.exprs), perl=T)
@@ -26,7 +26,7 @@ get.probe.exprs <- function(celfile.path){
   return(probe.exprs)
 }
 
-get.gene.exprs <- function(probe.exprs, fun.aggregate=mean){
+get.gene.exprs <- function(probe.exprs, fun.aggregate=median){
   
   ## takes probe-set expression
   ## returns gene-level expression 
