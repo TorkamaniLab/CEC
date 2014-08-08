@@ -1,0 +1,188 @@
+% 
+\documentclass[a4paper]{article}
+\usepackage{Sweave}
+\usepackage[top=0.75in, bottom=1in, left=1in, right=1in]{geometry}
+\usepackage{lastpage}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\addtolength{\headheight}{\baselineskip}
+\addtolength{\headheight}{\baselineskip}
+\fancyhead[LO,LE]{\includegraphics[width=3cm]{janssenlogo.png} \\
+\footnotesize Version 1.1 } 
+\fancyhead[CO,CE]{\footnotesize {\bfseries CECs in MI
+}
+\\
+Veridex/SCRIPPS/OCD}
+\fancyhead[RO,RE]{\footnotesize 8-August-2014 \\ JDx Global Scientific and
+Medical Affairs}
+\cfoot{\thepage\ of \pageref{LastPage}}
+
+
+\title{}
+\date{}
+\author{}
+
+\begin{document}
+
+
+
+
+\newpage
+\listoffigures
+\newpage
+<<init>>=
+# ---------------------------------------------------------------------------- #
+# Intellectual Property of Janssen Infectious Diseases - Diagnostics BVBA
+#
+# Dept.:    Global Medical and Scientific Affairs, BIOSTAT
+#           Turnhoutseweg 30, B-2340 Beerse, BEL
+# 
+#
+# File:	    CEC_MI_TX4_REV1b0.Rnw
+# Descr.:  	Reproduction of CEC Transfer Lists (Tier1)
+# Author:   Tim Jatkoe
+# Version:	0.1_ref_leg
+#
+#
+# ---------------------------------------------------------------------------- #
+#library set-up-- uncomment in your environment
+#source("http://bioconductor.org/biocLite.R")
+#biocLite()
+#biocLite("hgu133plus2.db")
+#library(affy)   
+#library(limma)  
+#biocLite("pcaMethods")
+#library(pcaMethods)
+#library(rms)
+#memory.limit(size = 4*2047)
+#library(hgu133plus2.db)
+#library(ROCR)
+
+#import data
+phenoData<-read.AnnotatedDataFrame("Scripps CEC sample info.txt", sep="\t")
+phenoData.cofact<-read.AnnotatedDataFrame("Scripps CEC sample info_cofact.txt", sep="\t")
+phenoData.t<-read.AnnotatedDataFrame("Scripps CEC sample info_testing.txt", sep="\t")
+phenoData.v<-read.AnnotatedDataFrame("Scripps CEC sample info_verification.txt", sep="\t")
+phenoData.cofact.v<-read.AnnotatedDataFrame("Scripps CEC sample info_verification_cofact.txt", sep="\t")
+
+eset.rma <- justRMA(celfile.path="affydata/Patient", phenoData=phenoData)
+eset.rma.cofact<-eset.rma
+phenoData(eset.rma.cofact)<-phenoData.cofact
+eset.rma.t <- justRMA(celfile.path="affydata/Testing/Patient", phenoData=phenoData.t)
+eset.rma.v <- justRMA(celfile.path="affydata/Verification", phenoData=phenoData.v)
+eset.rma.cofact.v<-eset.rma.v
+phenoData(eset.rma.cofact.v)<-phenoData.cofact.v
+
+blood.ngt.igt.t2d.notdetected<-read.table("absent_blood_ngt-igt-t2d.txt")
+
+
+#DATA: CLIN
+groupcall<-eset.rma@phenoData@data[[4]]
+groupcall<-as.data.frame(groupcall)
+groupcall.t<-eset.rma.t@phenoData@data[[4]]
+groupcall.t<-as.data.frame(groupcall.t)
+groupcall.v<-eset.rma.v@phenoData@data[[4]]
+groupcall.v<-as.data.frame(groupcall.v)
+#DATA: EXPR CUTS
+##FULL
+expr.full <- exprs(eset.rma)
+expr.full.t <- exprs(eset.rma.t)
+expr.full.v <- exprs(eset.rma.v)
+expr.full.cofact.v <-exprs(eset.rma.cofact.v)
+
+##Remove poor verification signal to noise array
+expr.full.cofact.v.snf<-expr.full.cofact.v[,as.environment(".GlobalEnv")$eset.rma.cofact.v@phenoData@data[[6]]>100]
+groupcall.v.snf<-groupcall.v[as.environment(".GlobalEnv")$eset.rma.cofact.v@phenoData@data[[6]]>100,]
+cec.count.v.snf<-as.environment(".GlobalEnv")$eset.rma.cofact.v@phenoData@data[[5]][as.environment(".GlobalEnv")$eset.rma.cofact.v@phenoData@data[[6]]>100]
+eset.rma.cofact.v.snf<-eset.rma.cofact.v[,as.environment(".GlobalEnv")$eset.rma.cofact.v@phenoData@data[[6]]>100]
+
+
+##Vectors of poor verification signal to noise array
+expr.full.cofact.v.snf.poor<-expr.full.cofact.v[,as.environment(".GlobalEnv")$eset.rma.cofact.v@phenoData@data[[6]]<100]
+groupcall.v.snf.poor<-groupcall.v[as.environment(".GlobalEnv")$eset.rma.cofact.v@phenoData@data[[6]]<100,]
+cec.count.v.snf.poor<-as.environment(".GlobalEnv")$eset.rma.cofact.v@phenoData@data[[5]][as.environment(".GlobalEnv")$eset.rma.cofact.v@phenoData@data[[6]]<100]
+
+prepca.eset.rma <- prep(eset.rma, scale = "none", center = TRUE)
+resPCA.eset.rma <- pca(prepca.eset.rma, method = "svd", center = FALSE, nPcs = 5)
+
+
+
+##STAT##
+bnitnd<-as.character(blood.ngt.igt.t2d.notdetected$V1)
+
+expr.rma.absBlood.S<-read.table("expr.rma.absBlood.S.txt",row.names=1,header=T) ##ICA SOURCE VECTORS FROM MATLAB
+bnitnd<-as.character(blood.ngt.igt.t2d.notdetected$V1)
+expr.rma.absBlood<-expr.full[is.element(row.names(expr.full),bnitnd),]
+expr.rma.absBlood.t<-expr.full.t[is.element(row.names(expr.full.t),bnitnd),]
+
+
+design.rma <-model.matrix(~ group, pData(eset.rma))
+fit.rma.absBlood <- lmFit(expr.rma.absBlood, design.rma)
+efit.rma.absBlood <- eBayes(fit.rma.absBlood)       
+difflist.rma.absBlood<-topTable(efit.rma.absBlood, coef=2, p.value=0.05, number=5000)     
+difflist.rma.absBlood.bonf<-topTable(efit.rma.absBlood, coef=2, adjust="bonferroni",p.value=0.05, number=5000)
+difflist.rma.absBlood.bonf.full<-topTable(efit.rma.absBlood, coef=2, adjust="bonferroni",p.value=1, number=50000)
+
+
+design.rma.cofact <-model.matrix(~ group + enumer, pData(eset.rma.cofact))
+fit.rma.cofact.absBlood <- lmFit(expr.rma.absBlood, design.rma.cofact)  
+efit.rma.cofact.absBlood <- eBayes(fit.rma.cofact.absBlood )        
+difflist.rma.cofact.absBlood<-topTable(efit.rma.cofact.absBlood, coef=2, p.value=0.05, number=5000)      
+difflist.rma.cofact.absBlood.bonf<-topTable(efit.rma.cofact.absBlood, coef=2, adjust="bonferroni",p.value=0.05, number=5000)
+difflist.rma.cofact.absBlood.bonf.full<-topTable(efit.rma.cofact.absBlood, coef=2, adjust="bonferroni",p.value=1, number=50000)
+
+x1<-hgu133plus2SYMBOL
+mapped_probes<-mappedkeys(x1)
+x2<-toTable(x1)
+
+difflist.rma.absBlood.bonf$ID<-row.names(difflist.rma.absBlood.bonf)
+difflist.rma.absBlood.bonf$ID<-row.names(difflist.rma.absBlood.bonf)
+difflist.rma.cofact.absBlood.bonf.full$ID<-row.names(difflist.rma.cofact.absBlood.bonf.full)
+
+difflist.cnsrv.check<-difflist.rma.absBlood.bonf$ID
+
+dcResults<-as.data.frame(matrix(NA,dim(difflist.rma.absBlood.bonf)[1],13))
+names(dcResults)<-c("TrainingAUC","TestingAUC","meanTraining.D","meanTesting.D","meanTraining.M","meanTesting.M","pc1","S1","S2","S3","S4","p","cofact.p")
+for (n in 1:dim(dcResults)[1]) {
+	
+	row.names(dcResults)[n]<-paste(x2$symbol[x2$probe_id==difflist.rma.absBlood.bonf$ID[n]],difflist.rma.absBlood.bonf$ID[n])
+	testmeTRAIN<-expr.full[row.names(expr.full)==difflist.cnsrv.check[n],]
+	dcResults[n,1]<-performance(prediction(testmeTRAIN,groupcall),"auc")@y.values
+	testmeTEST<-expr.full.t[row.names(expr.full.t)==difflist.cnsrv.check[n],]
+	dcResults[n,2]<-performance(prediction(testmeTEST,groupcall.t),"auc")@y.values
+	dcResults[n,3]<-mean(testmeTRAIN[groupcall=="Donor"])
+	dcResults[n,4]<-mean(testmeTEST[groupcall.t=="Donor"])
+	dcResults[n,5]<-mean(testmeTRAIN[groupcall=="MI patient"])
+	dcResults[n,6]<-mean(testmeTEST[groupcall.t=="MI patient"])
+	#dcResults[n,7]<-pc.eset.rma[is.element(row.names(expr.full),difflist.rma.absBlood.bonf$ID[n])]
+	dcResults[n,8:11]<-expr.rma.absBlood.S[is.element(row.names(expr.rma.absBlood.S),difflist.rma.absBlood.bonf$ID[n]),]
+	dcResults[n,12]<-difflist.rma.absBlood.bonf$adj.P.Val[n]
+	dcResults[n,13]<-difflist.rma.cofact.absBlood.bonf.full$adj.P.Val[is.element(difflist.rma.cofact.absBlood.bonf.full$ID,difflist.rma.absBlood.bonf$ID[n])]
+	
+}
+
+
+
+
+#write.table(dcResults,"results.stat.txt",sep="\t")
+
+dcResults
+
+
+@
+Please filter by AUC in training and test sets and remove duplicate genes to
+recreate tier 1 list.
+
+
+\newpage
+\begin{figure}
+\begin{center}
+<<fig=TRUE, echo=FALSE>>=
+plotPcs(resPCA.eset.rma,col=as.integer(as.factor(phenoData(eset.rma)$group)) + 1)
+@
+\caption{PCA}
+\end{center}
+\end{figure}
+
+
+\end{document}
