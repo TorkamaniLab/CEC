@@ -18,7 +18,7 @@ get.probe.exprs <- function(celfile.path){
                   bgcorrect.method="rma",
                   normalize.method="constant",
                   pmcorrect.method="pmonly",
-                  summary.method="avgdiff")
+                  summary.method="medianpolish")
   
   probe.exprs = as.data.frame(t(exprs(eset)))
   probe.exprs$PTID = gsub(".CEL", "", row.names(probe.exprs), perl=T)
