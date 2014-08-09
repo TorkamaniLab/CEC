@@ -8,7 +8,7 @@ run.rfe <- function(d){
   
   ### CUSTOM RFE FUNCTIONS
   bigSummary = function(...) c(twoClassSummary(...), defaultSummary(...))
-  select10 = function(x, metric, maximize) 10
+  select10 = function(...) 10
   
   ### CUSTROM LIST FOR CARET'S RFE FUNCTION
   denovoFuncs = rfFuncs
@@ -20,7 +20,7 @@ run.rfe <- function(d){
   validation = d[d$Cohort == "VALIDATION", ]
   
   ## PREPARE TRAINING DATA 
-  x = training %>% select(-Array, -Cohort, -Status)
+  x = training %>% select(-Array, -Cohort, -Status, -SN)
   y = training$Status
   
   ind = sapply(x, function(z) median(z[y == "AMI"]) > median(z[y != "AMI"]))
@@ -36,6 +36,8 @@ run.rfe <- function(d){
                            returnResamp="all",
                            saveDetails=F,
                            index=index)
+  
+  ### RUN RFE
   denovo = rfe(x=x,
                y=y,
                sizes=1:20,
@@ -44,7 +46,12 @@ run.rfe <- function(d){
                ntree=1000)
   
   p = predict(denovo, newdata=validation)
-  return(denovo=denovo, auc=auc(roc(validation$Status, p[,2])))
+  auc.all = auc(roc(validation$Status, p[,2]))
+  
+  ind = validation$SN > 100
+  auc.highSN = auc(roc(validation$Status[ind], p[ind,2]))
+  
+  return(list(denovo=denovo, auc.all=auc.all, auc.highSN))
 }
 
 
@@ -54,10 +61,11 @@ registerDoMC(8)
 
 probe.rfe = run.rfe(probes)
 print(probe.rfe$denovo)
-cat(paste("AUC on validation set:", probe.rfe$auc))
+cat(paste("AUC on entire validation set:", probe.rfe$auc.all))
+cat(paste("AUC on high SN validation set:", probe.rfe$auc.highSN))
 
 gene.rfe = run.rfe(genes)
 print(gene.rfe$denovo)
-cat(paste("AUC on validation set:", gene.rfe$auc))
-
+cat(paste("AUC on entire validation set:", gene.rfe$auc.all))
+cat(paste("AUC on high SN validation set:", probe.rfe$auc.highSN))
 

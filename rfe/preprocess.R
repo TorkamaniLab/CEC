@@ -4,6 +4,7 @@ library("data.table")
 library("hgu133plus2.db")
 library("plyr")
 library("dplyr")
+library("entropy")
 
 get.pheno <- function(){
   pheno.dir = "/gpfs/home/ekramer/Projects/CEC/data/CEC_MI_TRANSFER/"
@@ -29,10 +30,10 @@ get.pheno <- function(){
     select(Array, PID=pid, Cohort, Status, SN=sn)
 }
 
-probes2genes <- function(probes){
+probes2genes <- function(probes, filter.func=IQR){
   
   iqrs = data.frame(probe_id=colnames(probes)) %>% # creates a data.frame of probe_ids
-    mutate(iqr=apply(probes, 2, IQR)) %>% # calculates IQR for each probe
+    mutate(iqr=apply(probes, 2, filter.func)) %>% # calculates function for each probe
     merge(toTable(hgu133plus2SYMBOL)) %>% # maps probe ids to symbols
     group_by(symbol) %>%
     filter(iqr == max(iqr)) %>% # filters for top probe for each gene
@@ -43,6 +44,12 @@ probes2genes <- function(probes){
   return(x)
 }
 
+ent = function(x) x %>%
+    cut(5) %>%
+    table %>%
+    entropy(method="shrink", verbose=F)
+
+
 ## get phenotype information 
 pheno = get.pheno()
 
@@ -51,16 +58,16 @@ celfile.path = "/gpfs/home/ekramer/Projects/CEC/data/CEL"
 
 ## read affy file and normalize with RMA
 affy = ReadAffy(celfile.path=celfile.path)
-eset = rma(affy, normalize=F)
+eset = rma(affy, bgversion=1)
 probes = t(exprs(eset))
-genes = probes2genes(probes)
+genes = probes2genes(probes, filter.func=ent)
 pheno = get.pheno()
 
 ## merge with phenotype data
 merge.pheno = function(x) x %>%
   as.data.frame %>%
   mutate(Array=gsub(".CEL$", "", row.names(x), perl=T)) %>%
-  merge(pheno[c("Array", "Status", "Cohort")])
+  merge(pheno[c("Array", "Status", "Cohort", "SN")])
 
 probes = merge.pheno(probes)
 genes = merge.pheno(genes)
