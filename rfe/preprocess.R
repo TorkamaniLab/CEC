@@ -5,41 +5,6 @@ library("hgu133plus2.db")
 library("plyr")
 library("dplyr")
 
-### FUNCTIONS ###
-
-get.probe.exprs <- function(celfile.path){
-  
-  ## reads in CEL files from celfile.path
-  ## returns data.frame of expression values
-  
-  probes = ReadAffy(celfile.path=celfile.path)
-  
-  eset = justRMA(probes)
-  
-  probe.exprs = as.data.frame(t(exprs(eset)))
-  probe.exprs$PTID = gsub(".CEL", "", row.names(probe.exprs), perl=T)
-  
-  return(probe.exprs)
-}
-
-get.gene.exprs <- function(probe.exprs, fun.aggregate=median){
-  
-  ## takes probe-set expression
-  ## returns gene-level expression 
-  ## agg.func aggregates across probe sets
-  
-  probe2gene = toTable(hgu133plus2SYMBOL)
-  
-  tmp = probe.exprs %>%
-    as.data.table %>% # converting to data.table makes this go much faster
-    melt(id.vars="PTID", variable.name="probe_id") # see reshape2 manual for details of melting/casting
-    
-  tmp2 = merge(tmp, probe2gene, by="probe_id") %>% # merge with mapping to genes
-    select(-probe_id) %>% # delete column with probe_set id
-    dcast(PTID~symbol, fun.aggregate=fun.aggregate) %>% # aggregate across probe sets
-    as.data.frame
-}
-
 get.pheno <- function(){
   pheno.dir = "/gpfs/home/ekramer/Projects/CEC/data/CEC_MI_TRANSFER/"
   
@@ -51,24 +16,47 @@ get.pheno <- function(){
   testing = read.delim(testing.file, sep="\t", header=T, comment.char="#")
   validation = read.delim(validation.file, sep="\t", header=T, comment.char="#")
   
-  training$cohort = "TRAINING"
-  testing$cohort = "TESTING"
-  validation$cohort = "VALIDATION"
+  training$Cohort = "TRAINING"
+  testing$Cohort = "TESTING"
+  validation$Cohort = "VALIDATION"
   
   training %>%
     merge(testing, all=T) %>%
     merge(validation, all=T) %>%
-    mutate(status=ifelse(group=="Donor", "Ctrl", "AMI")) %>%
-    mutate(PTID=gsub("PLUS2", "PLUS_2", id))
-    
+    mutate(Status=factor(ifelse(group=="Donor", "Ctrl", "AMI"))) %>%
+    mutate(Array=gsub("PLUS2", "PLUS_2", id)) %>%
+    mutate(Cohort=factor(Cohort)) %>% 
+    select(Array, PID=pid, Cohort, Status, SN=sn)
 }
 
-### SCRIPT ###
+probes2genes <- function(probes){
+  
+  iqrs = data.frame(probe_id=colnames(probes)) %>% # creates a data.frame of probe_ids
+    mutate(iqr=apply(probes, 2, IQR)) %>% # calculates IQR for each probe
+    merge(toTable(hgu133plus2SYMBOL)) %>% # maps probe ids to symbols
+    group_by(symbol) %>%
+    filter(iqr == max(iqr)) %>% # filters for top probe for each gene
+    ungroup
+  
+  x = probes[ ,as.character(iqrs$probe_id)] # select best probes
+  colnames(x) = as.character(iqrs$symbol) # convert column names to genes
+  return(x)
+}
 
-celfile.path = "/gpfs/home/ekramer/Projects/CEC/data/CEL"
-
-probe.exprs = get.probe.exprs(celfile.path)
-gene.exprs = get.gene.exprs(probe.exprs)
+## get phenotype information 
 pheno = get.pheno()
 
-save(probe.exprs, gene.exprs, pheno, file="/gpfs/home/ekramer/Projects/CEC/data/exprs.Rdata")
+## set up base directories
+celfile.path = "/gpfs/home/ekramer/Projects/CEC/data/CEL"
+
+## read affy file and normalize with RMA
+affy = ReadAffy(celfile.path=celfile.path)
+eset = rma(affy, normalize=F)
+probes = t(exprs(eset))
+
+## reduce probes to genes
+iqrs = data.frame(probe_id=colnames(probes)) %>%
+  mutate(iqr=apply(probes, 2, IQR)) %>%
+  merge(toTable(hgu133plus2SYMBOL))
+
+
