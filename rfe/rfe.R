@@ -51,7 +51,7 @@ run.rfe <- function(d){
   ind = validation$SN > 100
   auc.highSN = auc(roc(validation$Status[ind], p[ind,2]))
   
-  return(list(denovo=denovo, auc.all=auc.all, auc.highSN))
+  return(list(denovo=denovo, auc.all=auc.all, auc.highSN=auc.highSN))
 }
 
 
@@ -61,11 +61,11 @@ registerDoMC(8)
 
 probe.rfe = run.rfe(probes)
 print(probe.rfe$denovo)
-cat(paste("AUC on entire validation set:", probe.rfe$auc.all))
-cat(paste("AUC on high SN validation set:", probe.rfe$auc.highSN))
+cat(paste("AUC on entire validation set:", probe.rfe$auc.all, "\n"))
+cat(paste("AUC on high SN validation set:", probe.rfe$auc.highSN, "\n"))
 
 gene.rfe = run.rfe(genes)
 print(gene.rfe$denovo)
-cat(paste("AUC on entire validation set:", gene.rfe$auc.all))
-cat(paste("AUC on high SN validation set:", probe.rfe$auc.highSN))
+cat(paste("AUC on entire validation set:", gene.rfe$auc.all, "\n"))
+cat(paste("AUC on high SN validation set:", gene.rfe$auc.highSN, "\n"))
 
