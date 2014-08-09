@@ -14,11 +14,7 @@ get.probe.exprs <- function(celfile.path){
   
   probes = ReadAffy(celfile.path=celfile.path)
   
-  eset = expresso(probes,
-                  bgcorrect.method="rma",
-                  normalize.method="constant",
-                  pmcorrect.method="pmonly",
-                  summary.method="medianpolish")
+  eset = justRMA(probes)
   
   probe.exprs = as.data.frame(t(exprs(eset)))
   probe.exprs$PTID = gsub(".CEL", "", row.names(probe.exprs), perl=T)
@@ -68,6 +64,8 @@ get.pheno <- function(){
 }
 
 ### SCRIPT ###
+
+celfile.path = "/gpfs/home/ekramer/Projects/CEC/data/CEL"
 
 probe.exprs = get.probe.exprs(celfile.path)
 gene.exprs = get.gene.exprs(probe.exprs)

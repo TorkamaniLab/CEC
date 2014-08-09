@@ -8,40 +8,6 @@ library("dplyr")
 
 bigSummary = function(...) c(twoClassSummary(...), defaultSummary(...))
 
-upregulatedFit = function(x, y, first, last, ...){
-  require("data.table")
-  require("reshape2")
-  
-  # x holds features
-  # y holds labels
-  if(class(x)[1] != "data.table") x = as.data.table(x)
-  
-  ## using data.table to find 
-  ## down-regulated genes
-  tmp = copy(x)
-  tmp[, Status:=y]
-  
-  # melts data.table by Status
-  tmp2 = melt(tmp, id.vars="Status", variable.name="Gene") 
-  
-  # finds mean expression for 
-  # each gene by status
-  tmp3 = tmp2[ ,
-              list(mean.exp=mean(value)), 
-              by=c("Status", "Gene")]
-  tmp3[, max.exp:=max(mean.exp), by="Gene"]
-  
-  # finds down-regulated genes
-  down.genes = tmp3[Status == "Ctrl", ][mean.exp == max.exp , Gene]
-  down.genes = as.character(down.genes)
-  
-  # set down-regulated genes to zeros
-  if(length(down.genes) > 0) x[ , (down.genes) := 0]
-  
-  # pass modified data to normal fit function
-  rfFuncs$fit(x, y, first, last, ...)
-}
-
 select10 = function(x, metric, maximize) 10
 
 
@@ -49,7 +15,6 @@ select10 = function(x, metric, maximize) 10
 
 denovoFuncs = rfFuncs
 denovoFuncs$summary = bigSummary
-∂denovoFuncs$fit = upregulatedFit
 denovoFuncs$selectSize = select10
 
 ### RUN RFE
@@ -64,6 +29,9 @@ validation = d[d$cohort == "VALIDATION", ]
 
 x = training %>% select(-PTID, -cohort, -status)
 y = factor(training$status)
+
+ind = sapply(x, function(z) median(z[y == "AMI"]) > median(z[y != "AMI"]))
+x = x[ , ind]
 
 index = createMultiFolds(y, times=5)
 
@@ -84,4 +52,11 @@ denovo = rfe(x=x,
 
 d = merge(probe.exprs, pheno[c("PTID", "cohort", "status", "sn")])
 validation = d[d$cohort == "VALIDATION", ]
-validation = validation[validation$sn > 100, ]
+validation2 = validation[validation$sn > 100, ]
+
+p = predict(denovo, newdata=validation)
+p2 = predict(denovo, newdata=validation2)
+
+auc(roc(validation$status, p[,2]))
+auc(roc(validation2$status, p2[,2]))
+
