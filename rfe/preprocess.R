@@ -53,10 +53,16 @@ celfile.path = "/gpfs/home/ekramer/Projects/CEC/data/CEL"
 affy = ReadAffy(celfile.path=celfile.path)
 eset = rma(affy, normalize=F)
 probes = t(exprs(eset))
+genes = probes2genes(probes)
+pheno = get.pheno()
 
-## reduce probes to genes
-iqrs = data.frame(probe_id=colnames(probes)) %>%
-  mutate(iqr=apply(probes, 2, IQR)) %>%
-  merge(toTable(hgu133plus2SYMBOL))
+## merge with phenotype data
+merge.pheno = function(x) x %>%
+  as.data.frame %>%
+  mutate(Array=gsub(".CEL$", "", row.names(x), perl=T)) %>%
+  merge(pheno[c("Array", "Status", "Cohort")])
 
+probes = merge.pheno(probes)
+genes = merge.pheno(genes)
 
+save(probes, genes, pheno, file="/gpfs/home/ekramer/Projects/CEC/data/cec.Rdata")
