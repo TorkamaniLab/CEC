@@ -3,6 +3,10 @@ library("caret")
 library("doMC")
 
 loocv <- function(x, y, ...){
+  
+  ## Performs leave-one-out cross-validation
+  ## ... are parameters passed to randomForest
+  
   require("randomForest")
   require("plyr")
   
@@ -22,6 +26,12 @@ loocv <- function(x, y, ...){
 }
 
 roc.plot <- function(p1, p2, y, ...){
+  
+    ## Plots ROC curves for two sets of predictions
+    ## p1 -- "All probes"
+    ## p2 -- "10 probe model"
+    ## y -- common set of labels for predictions
+  
     require("ROCR")
     require("RColorBrewer")
     
@@ -45,7 +55,8 @@ roc.plot <- function(p1, p2, y, ...){
     legend.text = paste(c("All Probe Model", "10 Probe Model"),
                          " (",
                          round(c(auc1, auc2), 2),
-                         ")", sep="")
+                         ")", 
+                        sep="")
     
     legend(0.5, 
            0.5, 
@@ -54,39 +65,30 @@ roc.plot <- function(p1, p2, y, ...){
           col=col)
 }
 
+get.predictions <- function(x, y.train, ...){
+  require("randomForest")
+  
+  x.train = x[x$Cohort != "VALIDATION", ]
+  x.validation = x[x$Cohort == "VALIDATION", ]
+  
+  p.train = loocv(x.train, y.train, ...)  
+  
+  rf = randomForest(x.train, y.train, ...)
+  p.validation = predict(rf, newdata=x.validation, type="prob")
+  
+  return(list(p.train=p.train, p.validation=p.validation))
+}
+
+
+
 registerDoMC(10)
 setwd("/gpfs/home/ekramer/Projects/CEC/rfe")
 load("../data/rfe_data.Rdata")
 load("../data/cec.Rdata")
 
-ten.gene.training = genes[genes$Cohort != "VALIDATION", ]
-ten.gene.validation = genes[genes$Cohort == "VALIDATION" & genes$SN > 100, ]
+y.train = genes$Status
 
-## ROC on training set
+ten.gene.x = genes[gene.rfe$denovo$optVariables]
+all.probes.x = select(probes, -Status, -Cohort, -Array, -SN)
 
-
-# 10 gene set training
-y = training$Status
-x = training[gene.rfe$denovo$optVariables]
-p.10.genes = loocv(x, y, ntree=1000)
-
-# full gene set training
-y = training$Status
-
-x = select(training, -Array, -Cohort, -Status, -SN)
-p.all.genes = loocv(x, y, ntree=1000)
-
-# plotting
-
-roc.plot(p.all.genes,
-         p.10.genes,
-         y,
-         main="Training Set")
-
-## ROCR on validation set
-
-rf.10.gene = gene.rfe$denovo
-rf.all.genes = randomForest(x, y, ntree=1000)
-
-p.10.genes = predict(rf.10.gene, newdata=validation)
-p.all.genes = predict(rf.all.genes, newdata=validation, type="prob")
+  
