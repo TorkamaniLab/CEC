@@ -27,7 +27,7 @@ y.v = genes[genes$Cohort == "VALIDATION" & genes$SN > 100, ]$Status
 
 
 ## select probes up-regulated in AMI
-ind = sapply(x.t, function(z) median(z[y.t == "AMI"]) > median(z[y.t !="AMI"]))
+ind = sapply(x.t, function(z) median(z[y.t == "AMI"]) > 1 + median(z[y.t !="AMI"]))
 x.t = x.t[,ind]
 x.v = x.v[,ind]
 
@@ -48,3 +48,13 @@ p.v.gp = predict(gp, newdata=x.v[gene.names], type="probabilities")
 
 save(net, p.t.net, p.v.net, gp, p.t.gp, p.v.gp, gene.names,
      file="../data/linear_results.Rdata")
+
+## post-hoc fold changes
+fc = data.frame(Gene=gene.names) %>%
+  mutate(Coefficient=-co[gene.names,1]) %>%
+  mutate(log.FC.discovery=sapply(x.t[gene.names], function(z) median(z[y.t=="AMI"]) - median(z[y.t!="AMI"]))) %>%
+  mutate(log.FC.validation=sapply(x.v[gene.names], function(z) median(z[y.v=="AMI"]) - median(z[y.v!="AMI"]))) %>%
+  mutate(FC.discovery=2^log.FC.discovery) %>%
+  mutate(FC.validation=2^log.FC.validation) %>%
+  arrange(-log.FC.discovery)
+
