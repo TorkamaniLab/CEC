@@ -7,8 +7,8 @@ library("pROC")
 roc.plot <- function(p1, p2, y, ...){
   
     ## Plots ROC curves for two sets of predictions
-    ## p1 -- "All probes"
-    ## p2 -- "10 probe model"
+    ## p1 -- "Linear model"
+    ## p2 -- "Gaussian Process"
     ## y -- common set of labels for predictions
   
     require("ROCR")
