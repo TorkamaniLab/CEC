@@ -4,29 +4,6 @@ library("doMC")
 library("dplyr")
 library("pROC")
 
-loocv <- function(x, y, ...){
-  
-  ## Performs leave-one-out cross-validation
-  ## ... are parameters passed to randomForest
-  
-  require("randomForest")
-  require("plyr")
-  
-  loocv.iter <- function(x, y, x.test, ...){
-    rf = randomForest(x, y, ...)
-    p = predict(rf, newdata=x.test, type="prob")
-    return(p)
-  }
-  
-  p = laply(1:nrow(x), function(i){
-    x.train = x[-i, ]
-    x.test = x[i, , drop=F]
-    y.train = y[-i]
-    
-    loocv.iter(x.train, y.train, x.test)
-  }, .parallel=T)
-}
-
 roc.plot <- function(p1, p2, y, ...){
   
     ## Plots ROC curves for two sets of predictions
@@ -55,7 +32,7 @@ roc.plot <- function(p1, p2, y, ...){
          lwd=2,
          add=T)
     
-    legend.text = paste(c("All Probe Model", "10 Probe Model"),
+    legend.text = paste(c("Linear Model", "Gaussian Process"),
                          " (",
                          round(c(auc1, auc2), 2),
                          ")", 
@@ -68,27 +45,10 @@ roc.plot <- function(p1, p2, y, ...){
           col=col)
 }
 
-get.predictions <- function(x, y, ...){
-  require("randomForest")
-  
-  ind = x$Cohort != "VALIDATION" 
-  
-  x.train = x[ind, ]
-  x.validation = x[!ind, ]
-  y.train = y[ind]
-  
-  p.train = loocv(x.train, y.train, ...)  
-  
-  rf = randomForest(x.train, y.train, ...)
-  p.validation = predict(rf, newdata=x.validation, type="prob")
-  
-  return(list(p.train=p.train, p.validation=p.validation))
-}
-
 
 
 registerDoMC(10)
-setwd("/gpfs/home/ekramer/Projects/CEC/rfe")
+setwd("/gpfs/home/ekramer/Projects/CEC/sbt")
 load("../data/rfe_data.Rdata")
 load("../data/cec.Rdata")
 

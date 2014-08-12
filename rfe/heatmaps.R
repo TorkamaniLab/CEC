@@ -19,19 +19,17 @@ hm.simple <- function(d, main, f.names, cexCol=1){
   
 }
 
-load("../data/rfe_data.Rdata")
+load("../data/linear_results.Rdata")
 load("../data/cec.Rdata")
 
 d = genes[genes$SN > 100 | is.na(genes$SN), ]
 
 validation = d[d$Cohort == "VALIDATION", ]
 training = d[d$Cohort != "VALIDATION", ]
-f.names = gene.rfe$denovo$optVariables
-
 
 pdf("../figures/heatmaps.pdf", width=10)
 
-hm.simple(training, "Training Set", f.names)
-hm.simple(validation, "Validation Set", f.names)
+hm.simple(training, "Discovery Set", gene.names)
+hm.simple(validation, "Validation Set", gene.names)
 
 dev.off()
