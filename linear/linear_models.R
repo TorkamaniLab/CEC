@@ -3,7 +3,7 @@ library("glmnet")
 library("plyr")
 library("dplyr")
 
-setwd("/gpfs/home/ekramer/Projects/CEC/sbf/")
+setwd("/gpfs/home/ekramer/Projects/CEC/linear/")
 
 load("~/Projects/CEC/data/cec.Rdata")
 
