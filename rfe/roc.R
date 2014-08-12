@@ -15,11 +15,11 @@ roc.plot <- function(p1, p2, y, ...){
     require("pROC")
     require("RColorBrewer")
     
-    roc1 = p1[,2] %>% prediction(y) %>% performance("tpr", "fpr")
-    roc2 = p2[,2] %>% prediction(y) %>% performance("tpr", "fpr")
+    roc1 = p1 %>% prediction(y) %>% performance("tpr", "fpr")
+    roc2 = p2 %>% prediction(y) %>% performance("tpr", "fpr")
     
-    auc1 = y %>% roc(p1[,2]) %>% auc
-    auc2 = y %>% roc(p2[,2]) %>% auc
+    auc1 = y %>% roc(p1) %>% auc
+    auc2 = y %>% roc(p2) %>% auc
     
     col = brewer.pal(3, "Accent")[1:2]
     
@@ -48,27 +48,15 @@ roc.plot <- function(p1, p2, y, ...){
 
 
 registerDoMC(10)
-setwd("/gpfs/home/ekramer/Projects/CEC/sbt")
-load("../data/rfe_data.Rdata")
+setwd("/gpfs/home/ekramer/Projects/CEC/sbf")
+load("../data/linear_results.Rdata")
 load("../data/cec.Rdata")
 
-genes = genes[genes$SN > 100 | is.na(genes$SN), ]
-probes = probes[probes$SN > 100 | is.na(probes$SN), ]
+y.train = genes$Status[genes$Cohort != "VALIDATION"]
+y.validation = genes$Status[genes$Cohort == "VALIDATION" & genes$SN > 100]
 
-y = genes$Status
-ten.probes = genes[c("Cohort", gene.rfe$denovo$optVariables)]
-all.probes= select(probes, -Status, -Array, -SN)
-  
-## RUN LOOCV AND PREDICT ON VALIDATION SET
-p.ten = get.predictions(ten.probes, y, ntree=1000)
-p.all = get.predictions(all.probes, y, ntree=1000)
-
-## PLOT ROC CURVES
-y.train = y[genes$Cohort != "VALIDATION"]
-y.validation = y[genes$Cohort == "VALIDATION"]
-
-pdf("roc_curves.pdf")
-roc.plot(p.all$p.train, p.ten$p.train, y.train, main="Discovery Set")
-roc.plot(p.all$p.validation, p.ten$p.validation, y.validation, main="Validation Set")
+pdf("../figures/roc_curves.pdf")
+roc.plot(p.t.gp, p.t.net, y.train, main="Discovery Set")
+roc.plot(p.v.gp, p.v.net, y.validation, main="Validation Set")
 dev.off()
 
