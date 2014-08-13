@@ -12,6 +12,7 @@ fc = sapply(x, function(z) median(z[y=="AMI"]) - median(z[y!="AMI"]))
 
 ## pca
 p = prcomp(as.matrix(x), center=T, scale.=T)
+
 s = p$rotation[,1:3]
 
 fc.rnk = data.frame(Gene=names(fc), fc=fc)

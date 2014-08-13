@@ -7,7 +7,7 @@ setwd("/gpfs/home/ekramer/Projects/CEC/rfe/")
 
 load("/gpfs/home/ekramer/Projects/CEC/data/cec.Rdata")
 
-tmp = probes[probes$SN > 100 | is.na(probes$SN), ]
+tmp = genes[genes$SN > 100 | is.na(genes$SN), ]
 
 x = select(tmp, -Status, -Array, -Cohort, -SN)
 p = prcomp(as.matrix(x), center=T, scale.=T)
