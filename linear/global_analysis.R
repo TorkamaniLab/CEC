@@ -21,7 +21,7 @@ fc.rnk = data.frame(Gene=names(fc), fc=fc)
 write.rnk = function(x, f) write.table(x, quote=F, sep="\t", row.names=F, col.names=F, file=f)
 write.rnk(fc.rnk, "../data/GSEA/fc.rnk")
 lapply(1:3, function(i){
-  s.rnk = data.frame(Gene=row.names(s), s=s[,1])
+  s.rnk = data.frame(Gene=row.names(s), s=s[,i])
   write.rnk(s.rnk, paste("../data/GSEA/s", i, ".rnk", sep=""))
 })
 
