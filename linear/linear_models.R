@@ -27,7 +27,7 @@ y.v = genes[genes$Cohort == "VALIDATION" & genes$SN > 100, ]$Status
 
 
 ## select probes up-regulated in AMI
-ind = sapply(x.t, function(z) median(z[y.t == "AMI"]) > 1 + median(z[y.t !="AMI"]))
+ind = sapply(x.t, function(z) median(z[y.t == "AMI"]) > median(z[y.t !="AMI"]))
 x.t = x.t[,ind]
 x.v = x.v[,ind]
 
@@ -46,8 +46,8 @@ gp = gausspr(x.t[gene.names], y.t)
 p.t.gp = predict(gp, newdata=x.t[gene.names], type="probabilities")
 p.v.gp = predict(gp, newdata=x.v[gene.names], type="probabilities")
 
-save(net, p.t.net, p.v.net, gp, p.t.gp, p.v.gp, gene.names,
-     file="../data/linear_results.Rdata")
+# save(net, p.t.net, p.v.net, gp, p.t.gp, p.v.gp, gene.names,
+#      file="../data/linear_results.Rdata")
 
 ## post-hoc fold changes
 fc = data.frame(Gene=gene.names) %>%
@@ -58,3 +58,5 @@ fc = data.frame(Gene=gene.names) %>%
   mutate(FC.validation=2^log.FC.validation) %>%
   arrange(-log.FC.discovery)
 
+write.table(fc, file="../figures/coefficients.xls", sep="\t",
+            quote=F, row.names=F)

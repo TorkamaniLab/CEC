@@ -32,13 +32,13 @@ roc.plot <- function(p1, p2, y, ...){
          lwd=2,
          add=T)
     
-    legend.text = paste(c("Linear Model", "Gaussian Process"),
+    legend.text = paste(c("Gaussian Process", "Linear Model"),
                          " (",
                          round(c(auc1, auc2), 2),
                          ")", 
                         sep="")
     
-    legend(0.5, 
+    legend(0.2, 
            0.5, 
           legend.text, 
           lwd=2, 
@@ -48,7 +48,7 @@ roc.plot <- function(p1, p2, y, ...){
 
 
 registerDoMC(10)
-setwd("/gpfs/home/ekramer/Projects/CEC/sbf")
+setwd("/gpfs/home/ekramer/Projects/CEC/linear")
 load("../data/linear_results.Rdata")
 load("../data/cec.Rdata")
 
@@ -56,7 +56,8 @@ y.train = genes$Status[genes$Cohort != "VALIDATION"]
 y.validation = genes$Status[genes$Cohort == "VALIDATION" & genes$SN > 100]
 
 pdf("../figures/roc_curves.pdf")
-roc.plot(p.t.gp, p.t.net, y.train, main="Discovery Set")
-roc.plot(p.v.gp, p.v.net, y.validation, main="Validation Set")
+par(cex=1.3)
+roc.plot(p.t.gp[,2], p.t.net, y.train, main="Discovery Set")
+roc.plot(p.v.gp[,2], p.v.net, y.validation, main="Validation Set")
 dev.off()
 

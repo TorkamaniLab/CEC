@@ -14,6 +14,8 @@ par(mfrow=c(1,1))
 
 pdf("../figures/scatterplots.pdf")
 
+par(cex=1.3)
+
 plot(x[c("HBEGF", "SYTL3")], 
      bty="n",
      pch=20,
