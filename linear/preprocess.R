@@ -69,7 +69,8 @@ cec.possible <-read.table("~/Projects/CEC/data/CEC_MI_TRANSFER/absent_blood_ngt-
 probes = probes[ , colnames(probes) %in% cec.possible]
 
 ## map probes to genes
-genes = probes2genes(probes, filter.func=ent)
+# genes = probes2genes(probes, filter.func=ent)
+genes = probes2genes(probes)
 
 ## merge with phenotype data
 merge.pheno = function(x) x %>%
@@ -80,4 +81,4 @@ merge.pheno = function(x) x %>%
 probes = merge.pheno(probes)
 genes = merge.pheno(genes)
 
-save(probes, genes, pheno, file="/gpfs/home/ekramer/Projects/CEC/data/cec_filtered.Rdata")
+save(probes, genes, pheno, file="/gpfs/home/ekramer/Projects/CEC/data/cec_filtered2.Rdata")
