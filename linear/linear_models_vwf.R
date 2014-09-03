@@ -28,35 +28,60 @@ y.v = genes[genes$Cohort == "VALIDATION" & genes$SN > 100, ]$Status
 
 
 ## select probes up-regulated in AMI
-ind = sapply(x.t, function(z) median(z[y.t == "AMI"]) > median(z[y.t !="AMI"]))
+ind = sapply(x.t, function(z) median(z[y.t == "AMI"]) > 1 + median(z[y.t !="AMI"]))
 x.t = x.t[,ind]
 x.v = x.v[,ind]
 
-## train initial model
-m = glm(y.t ~ VWF, data=x.t, family="binomial")
-o.t = predict(m, type="response")
-o.v = predict(m, newdata=x.v, type="response")
 
-## train elastic net
-net = cv.glmnet(as.matrix(x.t), y.t, family="binomial", alpha=1, offset=o.t)
-p.t.net = predict(net, newx=as.matrix(x.t), offset=o.t) # predict on training set
-p.v.net = predict(net, newx=as.matrix(x.v), offset=o.v) # predict on validation set
+## train lasso 
+m.lasso = cv.glmnet(as.matrix(x.t), y.t, family="binomial", pmax=5)
+p.t.lasso = predict(m.lasso, newx=as.matrix(x.t)) # predict on training set
+p.v.lasso = predict(m.lasso, newx=as.matrix(x.v)) # predict on validation set
 pROC::auc(roc(y.v, p.v.net))
 
 ## find selected genes
-co = coefficients(net)
-gene.names = rownames(co)[co[,1] != 0] # find non-zero coefficients
-gene.names = gene.names[grep("Intercept", gene.names, invert=T)] # delete intercept term
+co = coefficients(m.lasso)
+genes.lasso = rownames(co)[co[,1] != 0] # find non-zero coefficients
+genes.lasso = genes.lasso[grep("Intercept", genes.lasso, invert=T)] # delete intercept term
 
+## train elastic net
+m.elastic = cv.glmnet(as.matrix(x.t), y.t, family="binomial", pmax=20, alpha=0.5)
+p.t.net = predict(m.elastic, newx=as.matrix(x.t)) # predict on training set
+p.v.net = predict(m.elastic, newx=as.matrix(x.v)) # predict on validation set
+pROC::auc(roc(y.v, p.v.net))
+
+co = coefficients(m.elastic)
+genes.elastic = rownames(co)[co[,1] != 0] # find non-zero coefficients
+genes.elastic = genes.elastic[grep("Intercept", genes.elastic, invert=T)] # delete intercept term
 
 ## post-hoc fold changes
-fc = data.frame(Gene=gene.names) %>%
-  mutate(Coefficient=-co[gene.names,1]) %>%
-  mutate(log.FC.discovery=sapply(x.t[gene.names], function(z) median(z[y.t=="AMI"]) - median(z[y.t!="AMI"]))) %>%
-  mutate(log.FC.validation=sapply(x.v[gene.names], function(z) median(z[y.v=="AMI"]) - median(z[y.v!="AMI"]))) %>%
+fc.lasso = data.frame(Gene=genes.lasso) %>%
+  mutate(Coefficient=-co[genes.lasso,1]) %>%
+  mutate(log.FC.discovery=sapply(x.t[genes.lasso], function(z) median(z[y.t=="AMI"]) - median(z[y.t!="AMI"]))) %>%
+  mutate(log.FC.validation=sapply(x.v[genes.lasso], function(z) median(z[y.v=="AMI"]) - median(z[y.v!="AMI"]))) %>%
   mutate(FC.discovery=2^log.FC.discovery) %>%
   mutate(FC.validation=2^log.FC.validation) %>%
   arrange(-Coefficient)
 
-write.table(fc, file="../figures/coefficients.xls", sep="\t",
+
+fc.elastic = data.frame(Gene=genes.elastic) %>%
+  mutate(Coefficient=-co[genes.elastic,1]) %>%
+  mutate(log.FC.discovery=sapply(x.t[genes.elastic], function(z) median(z[y.t=="AMI"]) - median(z[y.t!="AMI"]))) %>%
+  mutate(log.FC.validation=sapply(x.v[genes.elastic], function(z) median(z[y.v=="AMI"]) - median(z[y.v!="AMI"]))) %>%
+  mutate(FC.discovery=2^log.FC.discovery) %>%
+  mutate(FC.validation=2^log.FC.validation) %>%
+  arrange(-Coefficient)
+
+fc.elastic$Previous.qPCR = fc.elastic$Gene %in% colnames(qpcr)
+
+qpcr = read.delim("../data/qpcr.txt")
+
+save(m.lasso, m.elastic, file="../data/linear_results_filtered.Rdata")
+
+write.table(fc.lasso, file="../figures/5_gene_model.xls", sep="\t",
             quote=F, row.names=F)
+
+write.table(fc.elastic, file="../figures/18_gene_model.xls", sep="\t",
+            quote=F, row.names=F)
+
+
