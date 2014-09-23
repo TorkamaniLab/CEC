@@ -1,4 +1,7 @@
 library("limma")
+library("plyr")
+library("dplyr")
+library("glmnet")
 
 load("~/Projects/CEC/data/cec_filtered2.Rdata")
 load("../data/linear_results_filtered.Rdata")
@@ -50,27 +53,5 @@ df = inner_join(p.vals, coefficients) %>%
 write.table(df, quote=F, row.names=F, col.names=T, sep="\t",
             file="~/Projects/CEC/figures/18_gene_model.xls")
 
-qpcr = read.delim("../data/qpcr.txt")
 
-qpcr.genes = df %>%
-  filter(sig) %>%
-  filter(previous.qpcr) %>%
-  select(gene) 
-
-qpcr2 = filter(qpcr, Used.in.Validation != "NO")
-
-y = qpcr2$Condition
-x = qpcr2[qpcr.genes$gene] %>% as.matrix
-x = apply(x, 2, function(y) y - qpcr2$GABPB1)
-
-m.qpcr = cv.glmnet(x, 
-                   y, 
-                   nfolds=nrow(x), 
-                   keep=T, 
-                   family="binomial",
-                   grouped=F,
-                   alpha=0.5)
-
-p.qpcr = m.qpcr$fit.preval[ , m.qpcr$lambda == m.qpcr$lambda.min]
-auc(roc(y, p.qpcr))
 

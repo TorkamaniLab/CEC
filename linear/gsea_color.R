@@ -27,14 +27,14 @@ col = c("#E0AEBB",
        "#EECBD7",
        "#A0C681")
 
-gsea.dir = "/gpfs/home/ekramer/Projects/CEC/data/GSEA/aug12/fc.rnk_ReactomePathways.gmt.GseaPreranked.1407907438901/"
+gsea.dir = "/gpfs/home/ekramer/Projects/CEC/data/GSEA/sep03/fc.rnk_ReactomePathways.gmt.GseaPreranked.1409788773303/"
 
 pos = read.delim(paste(gsea.dir, 
-            "gsea_report_for_na_pos_1407907438901.xls", 
+            "gsea_report_for_na_pos_1409788773303.xls", 
             sep=""))
 
 neg = read.delim(paste(gsea.dir, 
-                       "gsea_report_for_na_neg_1407907438901.xls", 
+                       "gsea_report_for_na_neg_1409788773303.xls", 
                        sep=""))
 
 
@@ -59,34 +59,34 @@ x = runif(nrow(d2))
 r = sqrt(d2$SIZE)/400
 
 ## without labels
-symbols(x, 
-        d2$NES, 
-        circles=r,
-        bty="n",
-        inches=F,
-        axes=F,
-        xlab="",
-        ylab="Normalized Enrichment Score",
-        main="Gene Enrichment Analysis",
-        bg=col[as.numeric(factor(d2$parent))],
-        fg="white",
-        xlim=c(0,1.5))
-axis(2)
-
-n = unique(d2$parent)
-n = gsub(" by Scavenger Receptors", "", n)
-n = gsub(" of small molecules", "", n)
-n = gsub(" and maintenance", "", n)
-
-legend(1.05, 5.7, 
-       n, 
-       col=col[as.numeric(factor(unique(d2$parent)))],
-       pch=20,
-       cex=0.65,
-       ncol=1,
-       y.intersp=1,
-       pt.cex=1,
-       bty="n")
+# symbols(x, 
+#         d2$NES, 
+#         circles=r,
+#         bty="n",
+#         inches=F,
+#         axes=F,
+#         xlab="",
+#         ylab="Normalized Enrichment Score",
+#         main="Gene Enrichment Analysis",
+#         bg=col[as.numeric(factor(d2$parent))],
+#         fg="white",
+#         xlim=c(0,1.5))
+# axis(2)
+# 
+# n = unique(d2$parent)
+# n = gsub(" by Scavenger Receptors", "", n)
+# n = gsub(" of small molecules", "", n)
+# n = gsub(" and maintenance", "", n)
+# 
+# legend(1.05, 5.7, 
+#        n, 
+#        col=col[as.numeric(factor(unique(d2$parent)))],
+#        pch=20,
+#        cex=0.65,
+#        ncol=1,
+#        y.intersp=1,
+#        pt.cex=1,
+#        bty="n")
 
 
 ## with labels
@@ -109,7 +109,7 @@ n = gsub(" by Scavenger Receptors", "", n)
 n = gsub(" of small molecules", "", n)
 n = gsub(" and maintenance", "", n)
 
-legend(1.05, 5.7, 
+legend(1.05, 4.7, 
        n, 
        col=col[as.numeric(factor(unique(d2$parent)))],
        pch=20,
@@ -122,7 +122,7 @@ legend(1.05, 5.7,
 labels = c("GPCR ligand\nbinding",
            "A1 Rhodopsin like\nreceptors",
            "Neuronal System",
-           "Homeostasis",
+           "Hemostasis",
            "Platelet\nActivation")
 text(x[1:5], d2$NES[1:5], labels, cex=0.6)
 
