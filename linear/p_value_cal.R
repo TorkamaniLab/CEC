@@ -46,12 +46,14 @@ df = inner_join(p.vals, coefficients) %>%
          logFC.validation, P.Value.validation, adj.P.Val.validation) %>%
   mutate(coef=-coef) %>%
   mutate(logFC.validation=-logFC.validation) %>%
+  mutate(FC.validation=2^logFC.validation) %>%
   mutate(logFC.discovery=-logFC.discovery) %>%
+  mutate(FC.validation=2^logFC.validation) %>%
   mutate(previous.qpcr=gene %in% colnames(qpcr)) %>%
   mutate(sig= adj.P.Val.discovery < 1e-3 & adj.P.Val.validation < 1e-3)
 
 write.table(df, quote=F, row.names=F, col.names=T, sep="\t",
-            file="~/Projects/CEC/figures/18_gene_model.xls")
+            file="~/Projects/CEC/figures/11_gene_model.xls")
 
 
 
