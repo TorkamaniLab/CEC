@@ -31,7 +31,7 @@ x.v = x.v[,ind]
 co = m.elastic %>%
   coef %>%
   as.matrix
-co = co[co!=0]
+co = co[co!=0, ,drop=T]
 
 m.genes = names(co)
 
@@ -43,6 +43,7 @@ x.v = x.v[ , colnames(x.v) %in% m.genes]
 
 x = scale(rbind(x.t, x.v))
 
+# create gene dendrogram based on entire set
 dend = x %>%
   t %>%
   dist %>%
@@ -50,7 +51,9 @@ dend = x %>%
   as.dendrogram
 
 # order the genes by their coefficients
-o = rank(co)[colnames(x)]
+x.t = x.t[ , order(co[colnames(x.t)])]
+x.v = x.v[ , order(co[colnames(x.t)])]
+
 
 pdf("../figures/heatmaps.pdf")
 par(cex=1.3)

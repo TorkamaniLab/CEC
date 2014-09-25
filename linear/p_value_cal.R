@@ -50,7 +50,7 @@ df = inner_join(p.vals, coefficients) %>%
   mutate(logFC.discovery=-logFC.discovery) %>%
   mutate(FC.discovery=2^logFC.discovery) %>%
   mutate(previous.qpcr=gene %in% colnames(qpcr)) %>%
-  mutate(sig= adj.P.Val.discovery < 1e-3 & adj.P.Val.validation < 1e-3)
+  select(-starts_with("log"))
 
 write.table(df, quote=F, row.names=F, col.names=T, sep="\t",
             file="~/Projects/CEC/figures/11_gene_model.xls")
