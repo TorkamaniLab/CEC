@@ -8,3 +8,6 @@ R scripts for circulating endothelial project
 - jnj: contains Tim's scripts for the initial analysis
 - linear: contains scripts for fitting linear models, specifically the elastic net
 - rfe: contains scripts for the recursive feature elmination with random forests
+- figures: figures and excel spreadsheets
+- barcode: gene expression barcoding script
+
