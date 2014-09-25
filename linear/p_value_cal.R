@@ -48,7 +48,7 @@ df = inner_join(p.vals, coefficients) %>%
   mutate(logFC.validation=-logFC.validation) %>%
   mutate(FC.validation=2^logFC.validation) %>%
   mutate(logFC.discovery=-logFC.discovery) %>%
-  mutate(FC.validation=2^logFC.validation) %>%
+  mutate(FC.discovery=2^logFC.discovery) %>%
   mutate(previous.qpcr=gene %in% colnames(qpcr)) %>%
   mutate(sig= adj.P.Val.discovery < 1e-3 & adj.P.Val.validation < 1e-3)
 
