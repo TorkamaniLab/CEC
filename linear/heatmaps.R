@@ -1,10 +1,10 @@
 library("gplots")
 
-hm.simple = function(x, y, main=""){
+hm.simple = function(x, y, main="", Rowv=NULL){
   heatmap.2(t(as.matrix(x)),
             scale="row",
             col=redgreen(75),
-            Rowv=dend,
+            Rowv=Rowv,
             trace="none",
             labCol=y,
             key=F,
@@ -30,8 +30,10 @@ x.v = x.v[,ind]
 
 co = m.elastic %>%
   coef %>%
-  as.matrix 
-m.genes = row.names(co)[co != 0]
+  as.matrix
+co = co[co!=0]
+
+m.genes = names(co)
 
 x.t = scale(x.t)
 x.v = scale(x.v)
@@ -47,9 +49,12 @@ dend = x %>%
   hclust %>%
   as.dendrogram
 
+# order the genes by their coefficients
+o = rank(co)[colnames(x)]
+
 pdf("../figures/heatmaps.pdf")
 par(cex=1.3)
-hm.simple(x.t, y.t, main="Discovery")
-hm.simple(x.v, y.v, main="Validation")
+hm.simple(x.t, y.t, main="Discovery", Rowv=F)
+hm.simple(x.v, y.v, main="Validation", Rowv=F)
 dev.off()
 
